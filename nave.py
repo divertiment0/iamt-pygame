@@ -37,12 +37,14 @@ class Nave:
         self.recibiendo_daño = False
 
     def update(self):
-        """Actualiza la posición de la nave."""
-        if self.movimiento_derecha and self.rect.right < self.pantalla_rect.right:
+        """Actualiza la posición de la nave respetando los límites de la pantalla."""
+        if self.movimiento_derecha:
             self.x += self.ajustes.velocidad_nave
-        if self.movimiento_izquierda and self.rect.left > 0:
+        if self.movimiento_izquierda:
             self.x -= self.ajustes.velocidad_nave
 
+        max_x = self.pantalla_rect.right - self.rect.width
+        self.x = max(0, min(self.x, max_x))
         self.rect.x = int(self.x)
 
     def blitme(self):
