@@ -12,6 +12,8 @@ class InvasionAlienigena:
     def __init__(self):
         """Inicializa el juego, pide la nave por consola y crea los recursos."""
         pygame.init()
+        pygame.joystick.init()
+
         self.ajustes = Ajustes()
 
         # 💻 MENÚ INTERACTIVO POR CONSOLA
@@ -26,12 +28,25 @@ class InvasionAlienigena:
         self.juego_activo = True
         self.nivel = 1  
 
+        # Gamepad
+        self.joystick = None
+        self._inicializar_gamepad()
+
         # Instanciamos la nave y grupos con el modelo seleccionado cargado
         self.nave = Nave(self)
         self.balas = pygame.sprite.Group()
         self.alienigenas = pygame.sprite.Group()
 
         self._crear_flota()
+
+    def _inicializar_gamepad(self):
+        """Detecta e inicializa el primer gamepad disponible."""
+        if pygame.joystick.get_count() > 0:
+            self.joystick = pygame.joystick.Joystick(0)
+            self.joystick.init()
+            print(f"🎮 Gamepad detectado: {self.joystick.get_name()}")
+        else:
+            print("🎮 No se detectó ningún gamepad. Se usará teclado.")
 
     def _seleccionar_nave_consola(self):
         """Muestra el menú de selección en la terminal antes de abrir la ventana."""
@@ -66,15 +81,26 @@ class InvasionAlienigena:
             self._actualizar_pantalla()
 
     def _revisar_eventos(self):
-        """Responde a las pulsaciones de teclas y a los eventos."""
+        """Responde a teclado, gamepad y cierre de ventana."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             elif event.type == pygame.KEYDOWN:
                 self._revisar_eventos_keydown(event)
+
             elif event.type == pygame.KEYUP:
                 self._revisar_eventos_keyup(event)
+
+            elif event.type == pygame.JOYHATMOTION:
+                self._revisar_hat_gamepad(event)
+
+            elif event.type == pygame.JOYAXISMOTION:
+                self._revisar_axis_gamepad(event)
+
+            elif event.type == pygame.JOYBUTTONDOWN:
+                self._revisar_boton_gamepad(event)
 
     def _revisar_eventos_keydown(self, event):
         """Responde a las pulsaciones de teclas."""
@@ -94,6 +120,31 @@ class InvasionAlienigena:
             self.nave.movimiento_derecha = False
         elif event.key == pygame.K_LEFT:
             self.nave.movimiento_izquierda = False
+
+    def _revisar_hat_gamepad(self, event):
+        """Movimiento con cruceta/D-pad."""
+        x, y = event.value
+
+        self.nave.movimiento_izquierda = (x == -1)
+        self.nave.movimiento_derecha = (x == 1)
+
+    def _revisar_axis_gamepad(self, event):
+        """Movimiento con stick analógico, si existe."""
+        if event.axis == 0:
+            if event.value < -0.3:
+                self.nave.movimiento_izquierda = True
+                self.nave.movimiento_derecha = False
+            elif event.value > 0.3:
+                self.nave.movimiento_derecha = True
+                self.nave.movimiento_izquierda = False
+            else:
+                self.nave.movimiento_izquierda = False
+                self.nave.movimiento_derecha = False
+
+    def _revisar_boton_gamepad(self, event):
+        """Disparo con botones del gamepad."""
+        if event.button in (0, 1, 2, 3):
+            self._disparar_bala()
 
     def _disparar_bala(self):
         """Crea un láser nuevo si no se supera el límite."""
@@ -164,12 +215,10 @@ class InvasionAlienigena:
             self.vidas_restantes -= 1
             print(f"💥 ¡Impacto crítico! Vidas restantes: {self.vidas_restantes}")
             
-            # 🎯 EFECTO SIMPLE: Pintamos la nave de rojo, refrescamos la pantalla y pausamos
             self.nave.recibiendo_daño = True
             self._actualizar_pantalla()
             sleep(0.3)
             
-            # Quitamos el efecto de daño antes de reaparecer
             self.nave.recibiendo_daño = False
             
             self.alienigenas.empty()
