@@ -23,6 +23,8 @@ class InvasionAlienigena:
             (self.ajustes.ancho_pantalla, self.ajustes.alto_pantalla)
         )
         pygame.display.set_caption("Invasión Alienígena")
+        pygame.event.set_grab(True)
+        pygame.mouse.set_visible(False)
 
         self.vidas_restantes = self.ajustes.limite_naves
         self.juego_activo = True
@@ -84,6 +86,8 @@ class InvasionAlienigena:
         """Responde a teclado, gamepad y cierre de ventana."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                pygame.event.set_grab(False)
+                pygame.mouse.set_visible(True)
                 pygame.quit()
                 sys.exit()
 
@@ -111,6 +115,8 @@ class InvasionAlienigena:
         elif event.key == pygame.K_SPACE:
             self._disparar_bala()
         elif event.key == pygame.K_ESCAPE:
+            pygame.event.set_grab(False)
+            pygame.mouse.set_visible(True)
             pygame.quit()
             sys.exit()
 
@@ -306,5 +312,7 @@ if __name__ == '__main__':
         ai = InvasionAlienigena()
         ai.run_game()
     except KeyboardInterrupt:
+        pygame.event.set_grab(False)
+        pygame.mouse.set_visible(True)
         print("\n[INFO] Juego cerrado correctamente. ¡Hasta la próxima!")
         sys.exit()
